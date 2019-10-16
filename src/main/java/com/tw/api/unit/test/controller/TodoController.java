@@ -35,7 +35,7 @@ public class TodoController {
         return ResponseEntity.ok(resourceWithUrls);
     }
 
-    @GetMapping("/{todo-id}")
+    @GetMapping(value = "/{todo-id}")
     public HttpEntity<ResourceWithUrl> getTodo(@PathVariable("todo-id") long id) {
         Optional<Todo> todoOptional = todoRepository.findById(id);
 
