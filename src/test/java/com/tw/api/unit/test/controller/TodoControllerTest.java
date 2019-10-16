@@ -41,6 +41,10 @@ class TodoControllerTest {
         ResultActions result = mvc.perform(get("/todos/1"));
         //then
         result.andExpect(status().isOk())
-                .andDo(print());
+                .andDo(print())
+                .andExpect(jsonPath("$.id", is(0)))
+                .andExpect(jsonPath("$.title", is("todo title")))
+                .andExpect(jsonPath("$.completed", is(false)))
+        ;
     }
 }
