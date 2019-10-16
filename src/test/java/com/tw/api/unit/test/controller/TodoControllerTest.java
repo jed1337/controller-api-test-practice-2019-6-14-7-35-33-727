@@ -21,8 +21,7 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -102,5 +101,25 @@ class TodoControllerTest {
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.title", is("new todo")))
         ;
+    }
+
+    @Test
+    public void should_delete_one_existing_todo() throws Exception {
+        when(todoRepository.findById(11)).thenReturn(Optional.of(new Todo(11, "eleven", false, 11)));
+
+        ResultActions result = mvc.perform(delete("/todos/11"));
+
+        result.andExpect(status().isOk())
+                .andDo(print());
+    }
+
+    @Test
+    public void should_not_delete_non_existing_todo() throws Exception {
+        when(todoRepository.findById(22)).thenReturn(Optional.empty());
+
+        ResultActions result = mvc.perform(delete("/todos/22"));
+
+        result.andExpect(status().isNotFound())
+                .andDo(print());
     }
 }
