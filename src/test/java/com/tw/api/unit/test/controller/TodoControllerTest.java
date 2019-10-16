@@ -3,6 +3,7 @@ package com.tw.api.unit.test.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tw.api.unit.test.domain.todo.Todo;
 import com.tw.api.unit.test.domain.todo.TodoRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,10 +42,15 @@ class TodoControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Test
-    void getTodo() throws Exception {
-        //given
+    @BeforeEach
+    public void setUp() {
         when(todoRepository.findById(5)).thenReturn(Optional.of(new Todo(5, "todo title", false, 5)));
+        when(todoRepository.findById(11)).thenReturn(Optional.of(new Todo(11, "eleven", false, 11)));
+    }
+
+    @Test
+    public void should_get_todo() throws Exception {
+        //given
         //when
         ResultActions result = mvc.perform(get("/todos/5"));
         //then
@@ -58,7 +64,7 @@ class TodoControllerTest {
     }
 
     @Test
-    void getAll() throws Exception {
+    public void should_get_all() throws Exception {
         //given
         List<Todo> todoList = new ArrayList<>();
         todoList.add(new Todo(1, "don't get zucced", false, 1));
@@ -85,7 +91,7 @@ class TodoControllerTest {
     }
 
     @Test
-    void saveTodo() throws Exception {
+    public void should_save_todo() throws Exception {
         //given
         Todo todo = new Todo("new todo", false);
 
@@ -105,8 +111,6 @@ class TodoControllerTest {
 
     @Test
     public void should_delete_one_existing_todo() throws Exception {
-        when(todoRepository.findById(11)).thenReturn(Optional.of(new Todo(11, "eleven", false, 11)));
-
         ResultActions result = mvc.perform(delete("/todos/11"));
 
         result.andExpect(status().isOk())
@@ -115,8 +119,6 @@ class TodoControllerTest {
 
     @Test
     public void should_not_delete_non_existing_todo() throws Exception {
-        when(todoRepository.findById(22)).thenReturn(Optional.empty());
-
         ResultActions result = mvc.perform(delete("/todos/22"));
 
         result.andExpect(status().isNotFound())
