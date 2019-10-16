@@ -30,6 +30,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(TodoController.class)
 @ActiveProfiles(profiles = "test")
 class TodoControllerTest {
+    private static final int EXISTING_TODO_ID = 5;
+    private static final int NON_EXISTING_TODO_ID = 22;
+
     @Autowired
     private TodoController todoController;
 
@@ -42,9 +45,12 @@ class TodoControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private Optional<Todo> existingTodo;
+
     @BeforeEach
     public void setUp() {
-        when(todoRepository.findById(5)).thenReturn(Optional.of(new Todo(5, "todo title", false, 5)));
+        existingTodo = Optional.of(new Todo(EXISTING_TODO_ID, "todo title", false, 5));
+        when(todoRepository.findById(EXISTING_TODO_ID)).thenReturn(existingTodo);
         when(todoRepository.findById(11)).thenReturn(Optional.of(new Todo(11, "eleven", false, 11)));
     }
 
@@ -52,11 +58,11 @@ class TodoControllerTest {
     public void should_get_todo() throws Exception {
         //given
         //when
-        ResultActions result = mvc.perform(get("/todos/5"));
+        ResultActions result = mvc.perform(get("/todos/" + EXISTING_TODO_ID));
         //then
         result.andExpect(status().isOk())
                 .andDo(print())
-                .andExpect(jsonPath("$.id", is(5)))
+                .andExpect(jsonPath("$.id", is(EXISTING_TODO_ID)))
                 .andExpect(jsonPath("$.title", is("todo title")))
                 .andExpect(jsonPath("$.completed", is(false)))
                 .andExpect(jsonPath("$.order", is(5)))
@@ -119,9 +125,50 @@ class TodoControllerTest {
 
     @Test
     public void should_not_delete_non_existing_todo() throws Exception {
-        ResultActions result = mvc.perform(delete("/todos/22"));
+        ResultActions result = mvc.perform(delete("/todos/" + NON_EXISTING_TODO_ID));
 
         result.andExpect(status().isNotFound())
                 .andDo(print());
+    }
+
+    @Test
+    public void should_update_existing_item() throws Exception {
+        Optional<Todo> updatedTodo = Optional.of(new Todo(EXISTING_TODO_ID, "updated title", false, 0));
+        ResultActions result = mvc.perform(patch("/todos/" + EXISTING_TODO_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updatedTodo))
+        );
+
+        result.andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(jsonPath("$.id", is(EXISTING_TODO_ID)))
+                .andExpect(jsonPath("$.title", is("updated title")))
+                .andExpect(jsonPath("$.completed", is(false)))
+                .andExpect(jsonPath("$.order", is(0)))
+        ;
+    }
+
+    @Test
+    public void should_not_update_non_existing_item() throws Exception {
+        ResultActions result = mvc.perform(patch("/todos/" + NON_EXISTING_TODO_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new Todo()))
+        );
+
+        result.andExpect(status().isNotFound())
+                .andDo(print())
+        ;
+    }
+
+    @Test
+    public void should_not_update_with_null_item() throws Exception {
+        ResultActions result = mvc.perform(patch("/todos/" + EXISTING_TODO_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(null))
+        );
+
+        result.andExpect(status().isBadRequest())
+                .andDo(print())
+        ;
     }
 }
