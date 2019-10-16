@@ -1,5 +1,6 @@
 package com.tw.api.unit.test.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tw.api.unit.test.domain.todo.Todo;
 import com.tw.api.unit.test.domain.todo.TodoRepository;
 import org.junit.jupiter.api.Test;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,6 +22,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -36,18 +39,22 @@ class TodoControllerTest {
     @MockBean
     private TodoRepository todoRepository;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Test
     void getTodo() throws Exception {
         //given
-        when(todoRepository.findById(1)).thenReturn(Optional.of(new Todo("todo title", false)));
+        when(todoRepository.findById(5)).thenReturn(Optional.of(new Todo(5, "todo title", false, 5)));
         //when
-        ResultActions result = mvc.perform(get("/todos/1"));
+        ResultActions result = mvc.perform(get("/todos/5"));
         //then
         result.andExpect(status().isOk())
                 .andDo(print())
-                .andExpect(jsonPath("$.id", is(0)))
+                .andExpect(jsonPath("$.id", is(5)))
                 .andExpect(jsonPath("$.title", is("todo title")))
                 .andExpect(jsonPath("$.completed", is(false)))
+                .andExpect(jsonPath("$.order", is(5)))
         ;
     }
 
@@ -75,6 +82,25 @@ class TodoControllerTest {
                 .andExpect(jsonPath("$[1].title", is("get out of facebook jail")))
                 .andExpect(jsonPath("$[1].completed", is(false)))
                 .andExpect(jsonPath("$[1].order", is(2)))
+        ;
+    }
+
+    @Test
+    void saveTodo() throws Exception {
+        //given
+        Todo todo = new Todo("new todo", false);
+
+        //when
+        ResultActions result = mvc.perform(post("/todos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(todo))
+        );
+
+        //then
+        result.andExpect(status().isCreated())
+                .andDo(print())
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.title", is("new todo")))
         ;
     }
 }
